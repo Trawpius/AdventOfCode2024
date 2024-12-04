@@ -2,14 +2,17 @@ use std::fs::File;
 use std::io::{prelude::*, BufReader};
 use std::collections::HashMap;
 use regex::{Regex, RegexSet};
+mod utility;
 
 fn main() {
     /*println!("Day 1 Puzzle 1: {}",day_1_puzzle_1());
     println!("Day 1 Puzzle 2: {}",day_1_puzzle_2());
     println!("Day 1 Puzzle 1: {}",day_2_puzzle_1());
-    println!("Day 1 Puzzle 2: {}",day_2_puzzle_2());    // NOT SOLVED
-    println!("Day 1 Puzzle 2: {}",day_3_puzzle_1());*/
+    println!("Day 1 Puzzle 2: {}",day_2_puzzle_2());            // NOT SOLVED
+    println!("Day 1 Puzzle 2: {}",day_3_puzzle_1());
     println!("Day 1 Puzzle 2: {}",day_3_puzzle_2());
+    println!("Day 1 Puzzle 2: {}",day_4_puzzle_1());*/
+    println!("Day 1 Puzzle 2: {}",day_4_puzzle_2());
 }
 
 
@@ -54,7 +57,6 @@ fn day_1_puzzle_1() -> i64 {
     return sum;
 
 }
-
 fn day_1_puzzle_2() -> i64 {
 
     let mut first_list: Vec<i64> = Vec::new();
@@ -93,7 +95,6 @@ fn day_1_puzzle_2() -> i64 {
 
     return sum;
 }
-
 fn day_2_puzzle_1() -> i64 {
     let mut safe = 0;
     let max = 3;
@@ -126,14 +127,14 @@ fn day_2_puzzle_2() -> i64 {
         let unwrapped_line = line.expect("Unable to read line");
         let mut spliterator: Vec<_> = unwrapped_line.split_whitespace().map(|x| x.parse::<i64>().unwrap()).collect();
 
-        let unsafe_index = first_unsafe_index(&spliterator);
+        let unsafe_index = utility::first_unsafe_index(&spliterator);
 
         if unsafe_index < 0 {
             safe += 1;
         }
         else {
             spliterator.remove(unsafe_index as usize);
-            let unsafe_index = first_unsafe_index(&spliterator);
+            let unsafe_index = utility::first_unsafe_index(&spliterator);
             if unsafe_index < 0 {
                 safe += 1;
             }
@@ -141,49 +142,6 @@ fn day_2_puzzle_2() -> i64 {
     }
     return safe;
 }
-fn first_unsafe_index(spliterator: &Vec<i64>) -> i64{
-    let length = (spliterator.len() - 1);
-    let mut direction = 0;
-
-    // special directionality check? Presumes min four entries I guess
-    let first_delta = spliterator[0+1] - spliterator[0];
-    let second_delta = spliterator[0+2] - spliterator[0+1];
-    let third_delta = spliterator[0+3] - spliterator[0+2];
-    if first_delta > 0{
-        if second_delta < 0 && third_delta < 0{
-            return 0;
-        }
-    }
-
-    if first_delta < 0{
-        if second_delta > 0 && third_delta > 0{
-            return 0;
-        }
-    }
-
-    for i in 0..length {
-        let first = spliterator[i];
-        let second = spliterator[i+1];
-        let delta = second-first;
-        if delta.abs() > 3{
-            return i as i64;
-        }
-        if delta == 0{
-            return i as i64;
-        }
-        if direction == 0{
-            direction = if delta > 0 { 1 } else { -1}; 
-        }
-        if direction == 1 && delta < 0{
-            return i as i64;
-        }
-        if direction == -1 && delta > 0{
-            return i as i64;
-        }
-    }
-    return -1;
-}
-
 fn day_3_puzzle_1() -> i64{
     let file = File::open("./inputs/day3_puzzle1.txt").expect("Unable to open file for reading");
     let regex_uno = Regex::new(r"mul\(\d{1,3},\d{1,3}\)").unwrap();
@@ -203,7 +161,6 @@ fn day_3_puzzle_1() -> i64{
     }
     return sum_of_products;
 }
-
 fn day_3_puzzle_2() -> i64{
     let file = File::open("./inputs/day3_puzzle1.txt").expect("Unable to open file for reading");
     let regex_uno = Regex::new(r"mul\(\d{1,3},\d{1,3}\)|do\(\)|don\'t\(\)").unwrap();
@@ -231,4 +188,106 @@ fn day_3_puzzle_2() -> i64{
         }
     }
     return sum_of_products;
+}
+fn day_4_puzzle_1() -> i64{
+    let file = File::open("./inputs/day4_puzzle1.txt").expect("Unable to open file for reading");
+    
+    // 2d vector of characters
+    let content = BufReader::new(file).lines().map(|x| x.unwrap().chars().collect::<Vec<_>>()).collect::<Vec<_>>();
+    
+    let width = content[0].len();
+    let height = content.len();
+
+    // forward not backward
+    // down not up
+    // downright not upleft
+    // downleft not upright
+    let mut sum = 0;
+        for y in 0..height{
+            for x in 0..width{
+
+                let mut horizontal_string = String::new();
+                if x + 3 < width{
+                    horizontal_string.push(content[y][x]);
+                    horizontal_string.push(content[y][x+1]);
+                    horizontal_string.push(content[y][x+2]);
+                    horizontal_string.push(content[y][x+3]);
+                    match horizontal_string.as_str() {
+                        "XMAS" => sum+=1,
+                        "SAMX" => sum+=1,
+                        _ => (),
+                    };
+                }
+
+
+                let mut vertical_string = String::new();
+                if y + 3 < height{
+                    vertical_string.push(content[y][x]);
+                    vertical_string.push(content[y+1][x]);
+                    vertical_string.push(content[y+2][x]);
+                    vertical_string.push(content[y+3][x]);
+                    match vertical_string.as_str() {
+                        "XMAS" => sum+=1,
+                        "SAMX" => sum+=1,
+                        _ => (),
+                    };
+                }
+
+
+                let mut diag_string = String::new();
+                if x + 3 < width && y + 3 < height {
+                    diag_string.push(content[y][x]);
+                    diag_string.push(content[y+1][x+1]);
+                    diag_string.push(content[y+2][x+2]);
+                    diag_string.push(content[y+3][x+3]);
+                    match diag_string.as_str() {
+                        "XMAS" => sum+=1,
+                        "SAMX" => sum+=1,
+                        _ => (),
+                    };
+                }
+
+                let mut diag_string = String::new();
+                if x >= 3  && y + 3 < height{
+                    diag_string.push(content[y][x]);
+                    diag_string.push(content[y+1][x-1]);
+                    diag_string.push(content[y+2][x-2]);
+                    diag_string.push(content[y+3][x-3]);
+                    match diag_string.as_str() {
+                        "XMAS" => sum+=1,
+                        "SAMX" => sum+=1,
+                        _ => (),
+                    };
+                }
+            }
+        }
+    return sum;
+}
+fn day_4_puzzle_2() -> i64{
+    let file = File::open("./inputs/day4_puzzle1.txt").expect("Unable to open file for reading");
+    
+    // 2d vector of characters
+    let content = BufReader::new(file).lines().map(|x| x.unwrap().chars().collect::<Vec<_>>()).collect::<Vec<_>>();
+    
+    let width = content[0].len();
+    let height = content.len();
+    
+    let regex_uno = Regex::new(r"M.S.A.M.S|S.S.A.M.M|M.M.A.S.S|S.M.A.S.M").unwrap();
+    // forward not backward
+    // down not up
+    // downright not upleft
+    // downleft not upright
+
+    let mut sum = 0;
+        for y in 0..height-2{
+            for x in 0..width-2{
+                // m.s.a.m.s; s.s.a.m.m; m.m.a.s.s;s.m.a.s.m 
+                let window: String = [content[x][y], content[x+1][y], content[x+2][y],
+                    content[x][y+1], content[x+1][y+1], content[x+2][y+1],
+                    content[x][y+2], content[x+1][y+2], content[x+2][y+2]].iter().collect();
+                
+                sum += regex_uno.find_iter(window.as_str()).count();
+            }
+        }
+    return sum as i64;
 }
