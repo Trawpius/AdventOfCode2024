@@ -1,4 +1,5 @@
 pub fn first_unsafe_index(spliterator: &Vec<i64>) -> i64{
+    #![allow(warnings)]
     let length = (spliterator.len() - 1);
     let mut direction = 0;
 
