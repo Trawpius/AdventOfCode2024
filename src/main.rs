@@ -1,22 +1,31 @@
 use std::fs::File;
 use std::io::{prelude::*, BufReader};
 use std::collections::HashMap;
-use regex::{Regex, RegexSet};
+use regex::{Regex};
+use utility::guard_walking_sim;
+use std::time::Instant;
+use itertools::{iproduct, Itertools, structs};
+
 mod utility;
+
 
 
 fn main() {
     #![allow(warnings)]
-    /*println!("Day 1 Puzzle 1: {}",day_1_puzzle_1());
-    println!("Day 1 Puzzle 2: {}",day_1_puzzle_2());
-    println!("Day 2 Puzzle 1: {}",day_2_puzzle_1());
-    println!("Day 2 Puzzle 2: {}",day_2_puzzle_2());            // NOT SOLVED
-    println!("Day 3 Puzzle 2: {}",day_3_puzzle_1());
-    println!("Day 3 Puzzle 2: {}",day_3_puzzle_2());*/
-    //println!("Day 4 Puzzle 2: {}",day_4_puzzle_1());
-    //println!("Day 4 Puzzle 2: {}",day_4_puzzle_2());
-    //println!("Day 5 Puzzle 1: {}",day_5_puzzle_1());
-    println!("Day 5 Puzzle 2: {}",day_5_puzzle_2());
+    let mut start = Instant::now();
+    /*println!("Day 1 Puzzle 1: {},{:?}",day_1_puzzle_1(), start.elapsed()); start = Instant::now();
+    println!("Day 1 Puzzle 2: {},{:?}",day_1_puzzle_2(), start.elapsed()); start = Instant::now();
+    println!("Day 2 Puzzle 1: {},{:?}",day_2_puzzle_1(), start.elapsed()); start = Instant::now();
+    println!("Day 2 Puzzle 2: {},{:?}",day_2_puzzle_2(), start.elapsed()); start = Instant::now();           // NOT SOLVED
+    println!("Day 3 Puzzle 2: {},{:?}",day_3_puzzle_1(), start.elapsed()); start = Instant::now();
+    println!("Day 3 Puzzle 2: {},{:?}",day_3_puzzle_2(), start.elapsed()); start = Instant::now();
+    println!("Day 4 Puzzle 2: {},{:?}",day_4_puzzle_1(), start.elapsed()); start = Instant::now();
+    println!("Day 4 Puzzle 2: {},{:?}",day_4_puzzle_2(), start.elapsed()); start = Instant::now();
+    println!("Day 5 Puzzle 1: {},{:?}",day_5_puzzle_1(), start.elapsed()); start = Instant::now();
+    println!("Day 5 Puzzle 2: {},{:?}",day_5_puzzle_2(), start.elapsed()); start = Instant::now();
+    println!("Day 6 Puzzle 1: {},{:?}",day_6_puzzle_1(), start.elapsed()); start = Instant::now();
+    println!("Day 6 Puzzle 2: {},{:?}",day_6_puzzle_2(), start.elapsed()); start = Instant::now();*/
+    println!("Day 7 Puzzle 1: {},{:?}",day_7_puzzle_1(), start.elapsed()); start = Instant::now();
 }
 
 
@@ -354,6 +363,7 @@ fn day_5_puzzle_1() -> i64 {
     return sum;
 }
 fn day_5_puzzle_2() -> i64 {
+
     #![allow(warnings)]
     let file = File::open("./inputs/day5_puzzle1.txt").expect("Unable to open file for reading");
     let lines: Vec<_> = BufReader::new(file).lines().map(|x| x.unwrap()).collect();
@@ -420,4 +430,142 @@ fn day_5_puzzle_2() -> i64 {
     }
 
     return sum;
+}
+fn day_6_puzzle_1() -> i64{
+    #![allow(warnings)]
+    let file = File::open("./inputs/day6_puzzle1.txt").expect("Unable to open file for reading");
+    let lines = BufReader::new(file).lines();
+    
+    let mut board: Vec<Vec<char>> = Vec::new(); 
+
+    
+    let characters_symbol: [char; 4] = ['^', '>', 'v', '<'];
+    let direction: [(i64,i64);4] =  [(-1,0), (0,1), (1,0),(0,-1)];
+    // 0 = up; 1 = right; 2 = down; 3 = left
+    let mut movement = 0;
+    let mut position = (0 as i64,0 as i64);
+    
+    
+
+    // create gameboard and initial position
+    for (y,row) in lines.enumerate(){
+        let mut item: Vec<char> = Vec::new();
+        
+        for (x, col) in row.unwrap().chars().enumerate(){
+            item.push(col);
+            
+            if characters_symbol.contains(&col){
+                position = (y as i64,x as i64);
+                println!("Original: {:?}",position);
+                movement = characters_symbol.iter().position(|sym| *sym == col).unwrap();
+            }
+        }
+        board.push(item);
+    }
+
+    let mut exit = false;
+    while !exit{
+        // new position
+        let new_position = (position.0 + direction[movement].0, position.1 + direction[movement].1);
+        if new_position.0 < 0 || new_position.0 > (board.len()-1) as i64 || new_position.1 < 0 || new_position.1 > (board[0].len()-1) as i64{
+            // is this x-y
+            board[position.0 as usize][position.1 as usize] = 'X';
+            /*for row in board.clone(){
+                println!("{:?}", row);
+            }*/
+            exit = true;
+        }
+        else{
+            let item = board[new_position.0 as usize][new_position.1 as usize];
+            if item =='#'{
+                movement = (movement + 1) % 4;
+            }
+            else {
+                // set position to X
+                board[position.0 as usize][position.1 as usize] = 'X';
+                // update position to new position
+                position = new_position;
+            }
+        }
+    }
+    return board.iter() .flat_map(|b| b.iter()) .filter(|&&x| x == 'X') .count() as i64;
+}
+fn day_6_puzzle_2() -> i64{
+    #![allow(warnings)]
+    let file = File::open("./inputs/day6_puzzle1.txt").expect("Unable to open file for reading");
+    let lines = BufReader::new(file).lines();
+    
+    let mut board: Vec<Vec<char>> = Vec::new(); 
+
+    
+    let characters_symbol: [char; 4] = ['^', '>', 'v', '<'];
+    let direction: [(i64,i64);4] =  [(-1,0), (0,1), (1,0),(0,-1)];
+    // 0 = up; 1 = right; 2 = down; 3 = left
+    let mut movement = 0;
+    let mut position = (0 as i64,0 as i64);
+
+    // create gameboard and initial position
+    for (y,row) in lines.enumerate(){
+        let mut item: Vec<char> = Vec::new();
+        for (x, col) in row.unwrap().chars().enumerate(){
+            item.push(col);
+            
+            if characters_symbol.contains(&col){
+                position = (y as i64,x as i64);
+                movement = characters_symbol.iter().position(|sym| *sym == col).unwrap();
+            }
+        }
+        board.push(item);
+    }
+    let original_board = board.clone();
+    let original_position = position.clone();
+    let original_movement = movement;
+
+    utility::guard_walking_sim(&mut board, position, movement);
+    let unobstructed_path = utility::get_unobstructed_path(&mut board);
+
+    println!("Total {}",unobstructed_path.clone().len());
+    let mut valid_obstacles = 0;
+
+    for obstacle in unobstructed_path{
+        // reset gameboard
+        board = original_board.clone();
+        position = original_position.clone();
+        movement = original_movement;
+        
+        // check if an obstacle can be placed
+        if board[obstacle.0 as usize][obstacle.1 as usize] != '.'{
+            continue;
+        }
+        else {
+            board[obstacle.0 as usize][obstacle.1 as usize] = '#';
+        }
+
+        let looper = utility::guard_walking_sim(&mut board, position, movement);
+        if looper{
+            valid_obstacles += 1;
+        }
+    }
+    return valid_obstacles;
+    //return board.iter() .flat_map(|b| b.iter()) .filter(|&&x| x == 'X') .count() as i64;
+}
+fn day_7_puzzle_1() -> i64{
+    #![allow(warnings)]
+    let file = File::open("./inputs/day7_puzzle1.txt").expect("Unable to open file for reading");
+    let lines = BufReader::new(file).lines();
+
+    let permutation_space = ['*','+'];
+    let permutations = Permutate(permutation_space, 3);
+
+    return 0;
+}
+
+fn Permutate(permutation_space: [char;2], output_size: usize) -> Vec<Vec<char>>{
+    let mut permutations :Vec<Vec<char>> = Vec::new();
+    
+    for x in std::iter::repeat(permutation_space).take(output_size).multi_cartesian_product(){
+        println!("{:?}", x);
+        permutations.push(x);
+    }
+    return permutations;
 }
