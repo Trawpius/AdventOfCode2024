@@ -1,10 +1,11 @@
 use std::fs::File;
-use std::io::{prelude::*, BufReader};
+use std::io::{prelude::*, BufReader, Write};
 use std::collections::HashMap;
+use itertools::Itertools;
 use regex::{Regex};
 use utility::guard_walking_sim;
 use std::time::Instant;
-use itertools::{iproduct, Itertools, structs};
+
 
 mod utility;
 
@@ -25,7 +26,15 @@ fn main() {
     println!("Day 5 Puzzle 2: {},{:?}",day_5_puzzle_2(), start.elapsed()); start = Instant::now();
     println!("Day 6 Puzzle 1: {},{:?}",day_6_puzzle_1(), start.elapsed()); start = Instant::now();
     println!("Day 6 Puzzle 2: {},{:?}",day_6_puzzle_2(), start.elapsed()); start = Instant::now();*/
-    println!("Day 7 Puzzle 1: {},{:?}",day_7_puzzle_1(), start.elapsed()); start = Instant::now();
+    //println!("Day 7 Puzzle 1: {},{:?}",day_7_puzzle_1(), start.elapsed()); start = Instant::now();
+    //println!("Day 7 Puzzle 2: {},{:?}",day_7_puzzle_2(), start.elapsed()); start = Instant::now();
+    //println!("Day 8 Puzzle 1: {},{:?}",day_8_puzzle_1(), start.elapsed()); start = Instant::now();
+    //println!("Day 8 Puzzle 2: {},{:?}",day_8_puzzle_2(), start.elapsed()); start = Instant::now();
+    println!("Day 9 Puzzle 1: {},{:?}",day_9_puzzle_1(), start.elapsed()); start = Instant::now();
+    //println!("Day 9 Puzzle 2: {},{:?}",day_9_puzzle_2(), start.elapsed()); start = Instant::now();
+    //println!("Day 10 Puzzle 1: {},{:?}",day_10_puzzle_1().0, start.elapsed()); start = Instant::now();
+    //println!("Day 10 Puzzle 2: {},{:?}",day_10_puzzle_1().1, start.elapsed()); start = Instant::now();
+
 }
 
 
@@ -552,20 +561,243 @@ fn day_6_puzzle_2() -> i64{
 fn day_7_puzzle_1() -> i64{
     #![allow(warnings)]
     let file = File::open("./inputs/day7_puzzle1.txt").expect("Unable to open file for reading");
-    let lines = BufReader::new(file).lines();
+    let lines: Vec<_> = BufReader::new(file).lines().map(|x| x.unwrap().replace(":", "")).collect();
 
+    let mut sum = 0;
     let permutation_space = ['*','+'];
-    let permutations = Permutate(permutation_space, 3);
 
-    return 0;
+    for line in lines.iter(){
+        let splits: Vec<i64> = line.split_whitespace().map(|x| x.parse::<i64>().unwrap()).collect();
+
+        let resultant = *splits.get(0).unwrap();
+        let number_of_operators = splits.len() - 2;
+
+        let permutations = utility::permutate(permutation_space, number_of_operators);
+        
+        let mut success = false;
+        for operator_set in permutations{
+
+            let mut calculated_resultant = 0;
+            for y in 0..operator_set.len(){
+                let operator = *operator_set.get(y).unwrap();
+                if y == 0{
+                    calculated_resultant= *splits.get(y+1).unwrap();
+                }
+                let right = *splits.get(y+2).unwrap();
+                if operator == '+'{
+                    calculated_resultant = calculated_resultant + right;
+                }
+                else if operator == '*'{
+                    calculated_resultant = calculated_resultant * right;
+                }
+            }
+
+            if calculated_resultant == resultant{
+                success = true;
+            }
+        }
+
+        if success{
+            sum+= resultant;
+        }
+    }   
+
+    return sum;
 }
+fn day_7_puzzle_2() -> i64{
+    #![allow(warnings)]
+    let file = File::open("./inputs/day7_puzzle1.txt").expect("Unable to open file for reading");
+    let lines: Vec<_> = BufReader::new(file).lines().map(|x| x.unwrap().replace(":", "")).collect();
 
-fn Permutate(permutation_space: [char;2], output_size: usize) -> Vec<Vec<char>>{
-    let mut permutations :Vec<Vec<char>> = Vec::new();
+    let mut sum = 0;
+    let permutation_space = ['*','+','|'];
+
+    for line in lines.iter(){
+        let splits: Vec<i64> = line.split_whitespace().map(|x| x.parse::<i64>().unwrap()).collect();
+
+        let resultant = *splits.get(0).unwrap();
+        let number_of_operators = splits.len() - 2;
+
+        let permutations = utility::permutate_3(permutation_space, number_of_operators);
+        
+        let mut success = false;
+        for operator_set in permutations{
+
+            let mut calculated_resultant = 0;
+            for y in 0..operator_set.len(){
+                let operator = *operator_set.get(y).unwrap();
+                if y == 0{
+                    calculated_resultant= *splits.get(y+1).unwrap();
+                }
+                let right = *splits.get(y+2).unwrap();
+                if operator == '+'{
+                    calculated_resultant = calculated_resultant + right;
+                }
+                else if operator == '*'{
+                    calculated_resultant = calculated_resultant * right;
+                }
+                else if operator == '|'{
+                    
+                    calculated_resultant = format!("{}{}",calculated_resultant, right).parse::<i64>().unwrap();
+                }
+            }
+
+            if calculated_resultant == resultant{
+                success = true;
+            }
+        }
+
+        if success{
+            sum+= resultant;
+        }
+    }   
+
+    return sum;
+}
+fn day_8_puzzle_1() -> i64 {
+    #![allow(warnings)]
+    let file = File::open("./inputs/day8_puzzle1.txt").expect("Unable to open file for reading");
+    let lines: Vec<Vec<char>> = BufReader::new(file).lines().map(|x| x.unwrap().chars().collect()).collect();
     
-    for x in std::iter::repeat(permutation_space).take(output_size).multi_cartesian_product(){
-        println!("{:?}", x);
-        permutations.push(x);
+    let num_rows = lines.len();
+    let num_cols = (*lines.get(0).unwrap()).len();
+    
+    let character_position = utility::character_position_hashmap(&lines);
+    
+    let mut antinodes = vec![];
+    
+    for key in character_position.keys(){
+        let positions : Vec<(i64,i64)> = character_position[key].clone();
+        let temp =  utility::antinodes(&lines, positions, *key);
+        for x in temp.iter(){
+            if !antinodes.contains(x){
+                antinodes.push(*x);
+            }
+        }
     }
-    return permutations;
+
+    return antinodes.len() as i64;
 }
+fn day_8_puzzle_2() -> i64 {
+    #![allow(warnings)]
+    let file = File::open("./inputs/day8_puzzle1.txt").expect("Unable to open file for reading");
+    let lines: Vec<Vec<char>> = BufReader::new(file).lines().map(|x| x.unwrap().chars().collect()).collect();
+    
+    let num_rows = lines.len();
+    let num_cols = (*lines.get(0).unwrap()).len();
+    
+    let character_position = utility::character_position_hashmap(&lines);
+    
+    let mut antinodes = vec![];
+    
+    for key in character_position.keys(){
+        let positions : Vec<(i64,i64)> = character_position[key].clone();
+        let temp =  utility::antinodes_2(&lines, positions, *key);
+        for x in temp.iter(){
+            if !antinodes.contains(x){
+                antinodes.push(*x);
+            }
+        }
+    }
+
+    return antinodes.len() as i64;
+}
+fn day_9_puzzle_1() -> i64 {
+    #![allow(warnings)]
+    let file = File::open("./inputs/day9_puzzle1_short.txt").expect("Unable to open file for reading");
+    let mut contents = String::new();
+    let lines = BufReader::new(file).read_to_string(&mut contents);
+    
+    let nums: Vec<u32> = contents.chars().map(|x| x.to_digit(10).unwrap()).collect();
+    
+    let mut space: Vec<Vec<String>>= nums.iter().enumerate().filter(|(index,_)| index%2==1).map(|(_,x)| vec![".".to_string(); (*x as usize)]).collect();
+    let mut blocks: Vec<Vec<String>>= nums.iter().enumerate().filter(|(index,_)| index%2==0).map(|(item,x)| vec![(item/2).to_string(); (*x as usize)]).collect();
+
+    /*let mut file = File::create("./output_space.txt").unwrap();
+    for item in &space { writeln!(file, "{:?}", item);} 
+    let mut file = File::create("./output_block.txt").unwrap();
+    for item in &blocks { writeln!(file, "{:?}", item);} */
+
+    // point to the current last block
+    let mut end_pointer = blocks.len() - 1;
+    let mut end_block = &mut blocks[end_pointer];
+    
+    // enumerate through all empty space blocks
+    let mut index = 0;
+    let mut max_index = space.len();
+    
+    while index < max_index{
+        let empty = &mut space[index];
+        
+        for (_ , inner_empty ) in empty.iter_mut().enumerate(){
+            // wait i dont think this can happen. enter for loop if iterator is empty
+            if inner_empty.len() == 0{
+                continue;
+            }
+            
+            // if last block still contains elements
+            // pop item off last block, and place in empty space
+            if end_block.len() > 0{
+                *inner_empty = end_block.pop().clone().unwrap();
+            }
+            else {
+                // search for next block, which contains more than 0 elements
+                while end_block.len() == 0{
+                    
+                    // change end block pointers
+                    end_pointer -= 1;
+
+                    // don't fill trailing empty space
+                    max_index -= 1;
+                    end_block = &mut blocks[end_pointer];
+                }
+                // pop item off new block, and place in empty space
+                *inner_empty = end_block.pop().clone().unwrap();
+            }
+        }
+        // go to next empty block
+        index += 1;
+    }
+    // count = index
+    let mut count = 0;    
+    let mut defragged = Vec::new();
+
+    // interlace both lists
+    for x in blocks.iter().zip(space.iter_mut()){
+        let mut xlist:Vec<_> = x.0.iter().map(|x| x.to_string()).collect();
+        let mut ylist:Vec<_> = x.1.iter().map(|x| x.to_string()).collect();
+        defragged.append(&mut xlist);
+        defragged.append(&mut ylist);        
+    }
+    /*let mut file = File::create("./output_defragged.txt").unwrap();
+    for item in &defragged { writeln!(file, "{:?}", item);} */
+    //println!("{:?}",defragged);
+    let mut checksum = 0;
+    for (index, item) in defragged.iter().enumerate(){
+        // parse string to i64. add to checksum
+        if let Ok(integer) = item.parse::<i64>(){
+            checksum += (index as i64) * integer;
+        }
+    }
+    return checksum;
+}
+
+// also day10 puzzle 2
+fn day_10_puzzle_1() -> (i64,i64) {
+    #![allow(warnings)]
+    let file = File::open("./inputs/day10_puzzle1.txt").expect("Unable to open file for reading");
+    let lines: Vec<Vec<char>> = BufReader::new(file).lines().map(|x| x.unwrap().chars().collect::<Vec<char>>()).collect();
+    
+    let train_head_positions = utility::trail_head_positions(&lines);
+    
+    let mut sum_trailheads = 0;
+    let mut sum_trailrating = 0;
+    for trail_head in train_head_positions{
+        let trails = utility::count_trails(trail_head,0, &lines);
+        sum_trailheads += trails.iter().unique().count();
+        sum_trailrating += trails.len();
+    }
+
+    return (sum_trailheads as i64, sum_trailrating as i64);
+}
+
